@@ -1,0 +1,16 @@
+class ProductService:
+
+    def __init__(self):
+        ...
+
+    async def add(self):
+        ...
+
+    async def delete(self):
+        ...
+
+    async def update(self):
+        ...
+
+    async def list(self):
+        ...
