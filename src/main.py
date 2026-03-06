@@ -3,7 +3,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
+from aiofile import AIOFile
 from fastapi import FastAPI
+from starlette.responses import HTMLResponse
 
 from src.api import routers
 from src.store.connect import create_all, show_ddl
@@ -35,6 +37,13 @@ app = FastAPI(
 
 for routers in routers:
     app.include_router(routers)
+
+
+@app.get('/')
+async def index():
+    async with AIOFile(Path(__file__).parent.parent / 'templates' / 'index.html', "r") as afp:
+        content = await afp.read()
+    return HTMLResponse(content=content)
 
 
 @app.get("/health")
