@@ -60,24 +60,3 @@ class QwenMultiModalEmbedder(Embedder):
             input=[input],
         )
         return np.array(resp.output['embeddings'][0]['embedding'])
-
-#
-# import asyncio
-#
-#
-# async def main():
-#
-#     r = await Embedder.factory(
-#         api_key='sk-773fc8ba8c0c4f76bc4db207d990bf28',
-#         base_url='qwen3-vl-embedding',
-#         model='qwen3-vl-embedding',
-#         dim=256
-#     ).embed_multimodal(
-#         content="""You'll always want to furnish the environment with its cushy, cozy feel. This oval sink will bring a touch of style to any bathroom. Because of its smooth surface, this sink is contemporary and stylish. You may use this creative ceramic sink as a functional container and a decorative piece in your home. It may be used in various settings, and it is also very simple to clean. The ceramic structure is of the highest quality, delicate and sturdy, with a crystalline glaze. This oval vessel sink will add a touch of elegance to your bathroom with its streamlined and efficiency. Beautiful in matte white, this pattern will add sophistication to the hotel and home spaces. Sink Dimension: 22.44"L x 14.57"W x 7.87"H (570mmL x 370mmW x 200mmH)Drain Opening: 1.77" (45mm) - A deep bowl prevents water from dripping out.- Stone resin creates a high-quality oval shape bathroom vessel sink.- Suitable for working with vessel sink faucets.- This item includes sink and popup drain.""",
-#         image=HttpUrl('https://img5.su-cdn.com/mall/2021/06/22/cdbd3c7d19414f4fb3b62ab09fd68a1f.jpg')
-#     )
-#
-#     print(r)
-#
-#
-# asyncio.run(main())
