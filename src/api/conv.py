@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from src.utils.logger import get_logger
 
-logger = get_logger('conv-router')
+logger = get_logger('conv.router')
 router = APIRouter(tags=['Conv'])
 
 

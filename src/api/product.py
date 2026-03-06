@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from src.modules.product.dto import ProductAdd
 from src.utils.logger import get_logger
 
-logger = get_logger('product-router')
+logger = get_logger('product.router')
 router = APIRouter(tags=['Product'])
 
 

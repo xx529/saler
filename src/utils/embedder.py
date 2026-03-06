@@ -29,9 +29,8 @@ class Embedder(BaseModel):
 
 class QwenMultiModalEmbedder(Embedder):
     provider: Literal['Qwen'] = 'Qwen'
-    base_url: str = Field(description='url'),
-    api_key: str = Field(description='api key'),
-    dim: Literal[2560, 2048, 1536, 1024, 768, 512, 256] = Field(description='纬度'),
+    api_key: str = Field(description='api key')
+    dim: Literal[2560, 2048, 1536, 1024, 768, 512, 256] = Field(description='纬度')
     model: str = Field(description='模型名称')
 
     async def embed_multimodal(self, content: str, image: HttpUrl) -> np.ndarray[np.float32]:

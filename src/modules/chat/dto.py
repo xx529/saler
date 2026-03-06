@@ -1,5 +1,7 @@
+import uuid
 from typing import List, Literal, Self
 
+from ag_ui.core import UserMessage as AgUiUserMessage
 from pydantic import BaseModel, Field, HttpUrl, model_validator
 
 
@@ -21,5 +23,12 @@ class ImageContent(BaseModel):
 
 
 class ChatQuery(BaseModel):
-    conv_id: str = Field(description='对话ID')
-    messages: List[TextContent | ImageContent] = Field(description='问题内容')
+    # conv_id: str = Field(description='对话ID')
+    message: List[TextContent] = Field(description='问题内容')
+
+    def to_agui_message(self) -> List[AgUiUserMessage]:
+        user_msg = AgUiUserMessage(
+            content=''.join([x.content for x in self.message]),
+            id=uuid.uuid4().hex,
+        )
+        return [user_msg]

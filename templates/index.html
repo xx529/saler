@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>AI 销售助手</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #e0e7ff;
+            --surface: #ffffff;
+            --bg: #f1f5fb;
+            --text: #1e293b;
+            --muted: #94a3b8;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 40px rgba(99,102,241,0.15);
+            --radius: 20px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── Header ─── */
+        header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-icon {
+            width: 38px;
+            height: 38px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-title {
+            flex: 1;
+        }
+
+        .header-title h1 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .header-title p {
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            margin-top: 1px;
+        }
+
+        .header-badge {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .user-id-input {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            width: 150px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .user-id-input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .user-id-input:focus {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        /* ─── Chat area ─── */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-behavior: smooth;
+        }
+
+        #chat-container::-webkit-scrollbar { width: 5px; }
+        #chat-container::-webkit-scrollbar-track { background: transparent; }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* ─── Welcome ─── */
+        .welcome {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+
+        .welcome-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 16px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .welcome h2 { font-size: 20px; color: var(--text); margin-bottom: 6px; font-weight: 700; }
+        .welcome p { font-size: 14px; line-height: 1.6; }
+
+        /* ─── Messages ─── */
+        .message {
+            display: flex;
+            gap: 10px;
+            animation: msgIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .message.user  { align-self: flex-end;   flex-direction: row-reverse; max-width: 75%; }
+        .message.assistant { align-self: flex-start; max-width: 80%; }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+
+        .message.user .avatar {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+
+        .message.assistant .avatar {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(239,68,68,0.25);
+        }
+
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.65;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .message.user .bubble {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.25);
+        }
+
+        .message.assistant .bubble {
+            background: var(--surface);
+            color: var(--text);
+            border-bottom-left-radius: 6px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+
+        /* Markdown */
+        .bubble p { margin: 6px 0; }
+        .bubble p:first-child { margin-top: 0; }
+        .bubble p:last-child { margin-bottom: 0; }
+        .bubble strong { font-weight: 700; }
+        .bubble em { font-style: italic; }
+        .bubble img { max-width: 200px; border-radius: 10px; margin: 6px 0; display: block; }
+        .bubble ul, .bubble ol { padding-left: 20px; margin: 6px 0; }
+        .bubble li { margin: 3px 0; }
+        .bubble h1, .bubble h2, .bubble h3 { font-weight: 700; margin: 8px 0 4px; }
+        .bubble h1 { font-size: 18px; }
+        .bubble h2 { font-size: 16px; }
+        .bubble h3 { font-size: 14px; }
+        .bubble code {
+            background: #f1f5f9;
+            color: #6366f1;
+            padding: 1px 6px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-family: "SF Mono", monospace;
+        }
+        .bubble pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+        .bubble pre code { background: none; color: inherit; padding: 0; }
+        .message.user .bubble code { background: rgba(255,255,255,0.2); color: #fff; }
+
+        /* ─── Tool indicator ─── */
+        .tool-indicator {
+            align-self: flex-start;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--muted);
+            box-shadow: var(--shadow-sm);
+            animation: msgIn 0.3s ease;
+        }
+
+        .tool-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .tool-dots span {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #f59e0b;
+            animation: dotBounce 1.2s ease infinite;
+        }
+
+        .tool-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .tool-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
+            40% { transform: translateY(-4px); opacity: 1; }
+        }
+
+        /* ─── Product section ─── */
+        .product-section {
+            align-self: flex-start;
+            max-width: 92%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px 18px 18px;
+            box-shadow: var(--shadow-md);
+            animation: msgIn 0.4s ease;
+        }
+
+        .product-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .product-section-header .icon {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .product-section-header .title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.3px;
+        }
+
+        .product-section-header .count {
+            margin-left: auto;
+            font-size: 11px;
+            color: var(--muted);
+            background: var(--bg);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* ══════════════════════════════════════
+           Product cards — shared base
+        ══════════════════════════════════════ */
+        .product-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+
+        .product-card {
+            cursor: pointer;
+            transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
+        }
+
+        .product-card-badge {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            font-size: 10px; font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 8px;
+        }
+
+        /* ── Style A · Grid（竖向卡片网格）── */
+        .layout-grid .product-cards { flex-wrap: wrap; }
+
+        .layout-grid .product-card {
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            width: 150px;
+            border: 1px solid var(--border);
+        }
+        .layout-grid .product-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(99,102,241,0.2);
+        }
+        .layout-grid .product-card-img-wrap {
+            position: relative; height: 130px; background: #f8fafc; overflow: hidden;
+        }
+        .layout-grid .product-card img {
+            width: 100%; height: 100%; object-fit: cover;
+            display: block; transition: transform 0.3s ease;
+        }
+        .layout-grid .product-card:hover img { transform: scale(1.06); }
+        .layout-grid .product-card-info { padding: 10px 12px 12px; }
+        .layout-grid .product-card-name {
+            font-size: 13px; font-weight: 700; color: var(--text);
+            margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .layout-grid .product-card-desc {
+            font-size: 11.5px; color: var(--muted); line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        /* ── Style B · List（横向列表）── */
+        .layout-list .product-cards { flex-direction: column; gap: 10px; }
+
+        .layout-list .product-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+            width: 100%;
+        }
+        .layout-list .product-card:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-light);
+        }
+        .layout-list .product-card-img-wrap {
+            position: relative; flex-shrink: 0;
+            width: 72px; height: 72px; border-radius: 12px;
+            overflow: hidden; background: #f8fafc;
+        }
+        .layout-list .product-card img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .layout-list .product-card:hover img { transform: scale(1.08); }
+        .layout-list .product-card-badge { top: 4px; right: 4px; }
+        .layout-list .product-card-info { flex: 1; min-width: 0; }
+        .layout-list .product-card-name {
+            font-size: 14px; font-weight: 700; color: var(--text);
+            margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .layout-list .product-card-desc {
+            font-size: 12px; color: var(--muted); line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .layout-list .product-card-arrow {
+            flex-shrink: 0; color: var(--muted); font-size: 18px; line-height: 1;
+        }
+
+        /* ── Style C · Showcase（首推大图 + 小图行）── */
+        .layout-showcase .product-cards { flex-direction: column; gap: 10px; }
+        .layout-showcase .product-cards-sub { display: flex; gap: 10px; }
+
+        .layout-showcase .product-card-featured {
+            position: relative;
+            border-radius: 16px; overflow: hidden;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+        .layout-showcase .product-card-featured img {
+            width: 100%; height: 180px; object-fit: cover;
+            display: block; transition: transform 0.3s ease;
+        }
+        .layout-showcase .product-card-featured:hover img { transform: scale(1.04); }
+        .layout-showcase .product-card-featured-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 28px 14px 14px;
+            background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+            color: #fff;
+        }
+        .layout-showcase .product-card-featured-overlay .name {
+            font-size: 15px; font-weight: 700; margin-bottom: 3px;
+        }
+        .layout-showcase .product-card-featured-overlay .desc {
+            font-size: 12px; opacity: 0.82; line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        .layout-showcase .product-card {
+            flex: 1;
+            border-radius: 14px; overflow: hidden;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+        .layout-showcase .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .layout-showcase .product-card-img-wrap {
+            position: relative; height: 90px; background: #f8fafc; overflow: hidden;
+        }
+        .layout-showcase .product-card img {
+            width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;
+        }
+        .layout-showcase .product-card:hover img { transform: scale(1.07); }
+        .layout-showcase .product-card-info { padding: 8px 10px 10px; }
+        .layout-showcase .product-card-name {
+            font-size: 12px; font-weight: 700; color: var(--text);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .layout-showcase .product-card-desc { display: none; }
+
+        /* ── Style D · Overlay（方形贴图 + 渐变遮罩文字）── */
+        .layout-overlay .product-cards { gap: 10px; }
+
+        .layout-overlay .product-card {
+            position: relative;
+            width: 140px; height: 160px;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        .layout-overlay .product-card:hover {
+            transform: scale(1.04) rotate(-1deg);
+            box-shadow: 0 14px 36px rgba(99,102,241,0.25);
+        }
+        .layout-overlay .product-card-img-wrap {
+            position: absolute; inset: 0;
+        }
+        .layout-overlay .product-card img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.35s ease;
+        }
+        .layout-overlay .product-card:hover img { transform: scale(1.1); }
+        .layout-overlay .product-card-info {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 24px 10px 10px;
+            background: linear-gradient(to top, rgba(15,15,30,0.75), transparent);
+        }
+        .layout-overlay .product-card-name {
+            font-size: 12.5px; font-weight: 700; color: #fff;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .layout-overlay .product-card-desc { display: none; }
+        .layout-overlay .product-card-badge { top: 8px; left: 8px; right: auto; }
+
+        /* ─── Question section ─── */
+        .question-section {
+            align-self: flex-start;
+            max-width: 92%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 16px 18px 18px;
+            box-shadow: var(--shadow-md);
+            animation: msgIn 0.4s ease;
+        }
+
+        .question-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .question-header .icon {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .question-header .title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.3px;
+        }
+
+        .question-text {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 14px;
+            line-height: 1.6;
+        }
+
+        .question-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .question-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .question-option:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: translateX(4px);
+        }
+
+        .question-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        .question-option input[type="checkbox"],
+        .question-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .question-option-label {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .question-submit {
+            margin-top: 12px;
+            width: 100%;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+        }
+
+        .question-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99,102,241,0.45);
+        }
+
+        .question-submit:active {
+            transform: translateY(0);
+        }
+
+        /* ─── Typing cursor ─── */
+        .typing-cursor::after {
+            content: "▋";
+            animation: blink 0.65s infinite;
+            color: var(--primary);
+            font-size: 12px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* ─── Loading bubble (waiting for first response) ─── */
+        .loading-bubble {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 14px 18px;
+        }
+
+        .loading-bubble span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: inline-block;
+            animation: loadingBounce 1.3s ease infinite;
+        }
+
+        .loading-bubble span:nth-child(2) { animation-delay: 0.18s; background: #8b5cf6; }
+        .loading-bubble span:nth-child(3) { animation-delay: 0.36s; background: #a78bfa; }
+
+        @keyframes loadingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-7px); }
+        }
+
+        /* ─── Send button loading spinner ─── */
+        #send-btn .icon-send { display: flex; }
+        #send-btn .icon-spin { display: none; }
+
+        #send-btn.loading .icon-send { display: none; }
+        #send-btn.loading .icon-spin { display: flex; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #send-btn .icon-spin svg {
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* ─── Input area ─── */
+        #input-area {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 14px 20px 18px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+
+        .input-wrap {
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            padding: 10px 14px;
+            gap: 8px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-wrap:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        #user-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            max-height: 110px;
+            min-height: 22px;
+            line-height: 1.55;
+            font-family: inherit;
+            color: var(--text);
+        }
+
+        #user-input::placeholder { color: var(--muted); }
+
+        .input-hint {
+            font-size: 11px;
+            color: var(--muted);
+            white-space: nowrap;
+            align-self: flex-end;
+            padding-bottom: 1px;
+        }
+
+        #send-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.2s ease, opacity 0.2s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+        }
+
+        #send-btn:hover:not(:disabled) {
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(99,102,241,0.45);
+        }
+
+        #send-btn:active:not(:disabled) { transform: scale(0.95); }
+
+        #send-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-icon">🛍️</div>
+    <div class="header-title">
+        <h1>AI 销售助手</h1>
+        <p>智能推荐 · 随时为您服务</p>
+    </div>
+    <input type="number" id="user-id-input" class="user-id-input" placeholder="输入 User ID" min="1" step="1">
+    <div class="header-badge">● 在线</div>
+</header>
+
+<div id="chat-container">
+    <div class="welcome">
+        <div class="welcome-icon">✨</div>
+        <h2>你好，我是 AI 销售助手</h2>
+        <p>告诉我您的需求，我来为您挑选最合适的商品</p>
+    </div>
+</div>
+
+<div id="input-area">
+    <div class="input-wrap">
+        <textarea id="user-input" placeholder="请输入您想了解的商品…" rows="1"></textarea>
+        <span class="input-hint">Enter 发送</span>
+    </div>
+    <button id="send-btn" title="发送">
+        <span class="icon-send">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </span>
+        <span class="icon-spin">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                <path d="M12 2a10 10 0 0 1 10 10"></path>
+            </svg>
+        </span>
+    </button>
+</div>
+
+<script>
+    // 检查 marked 是否加载成功，提供降级方案
+    const parseMarkdown = typeof marked !== 'undefined' && marked.parse
+        ? (text) => marked.parse(text)
+        : (text) => escapeHtml(text).replace(/\n/g, '<br>');
+
+    if (typeof marked !== 'undefined') {
+        marked.setOptions({ breaks: true });
+    }
+
+    const chatContainer = document.getElementById('chat-container');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    // 存储对话历史
+    let conversationHistory = [];
+
+    userInput.addEventListener('input', () => {
+        userInput.style.height = 'auto';
+        userInput.style.height = Math.min(userInput.scrollHeight, 110) + 'px';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    function removeWelcome() {
+        const w = chatContainer.querySelector('.welcome');
+        if (w) w.remove();
+    }
+
+    function appendUserMessage(text) {
+        removeWelcome();
+        const div = document.createElement('div');
+        div.className = 'message user';
+        div.innerHTML = `
+            <div class="avatar">我</div>
+            <div class="bubble">${escapeHtml(text)}</div>
+        `;
+        chatContainer.appendChild(div);
+        scrollToBottom();
+    }
+
+    function createAssistantBubble() {
+        const div = document.createElement('div');
+        div.className = 'message assistant';
+        div.innerHTML = `
+            <div class="avatar">AI</div>
+            <div class="bubble typing-cursor"></div>
+        `;
+        chatContainer.appendChild(div);
+        scrollToBottom();
+        return div.querySelector('.bubble');
+    }
+
+    function createLoadingBubble() {
+        const div = document.createElement('div');
+        div.className = 'message assistant';
+        div.id = 'loading-bubble';
+        div.innerHTML = `
+            <div class="avatar">AI</div>
+            <div class="bubble" style="padding:0">
+                <div class="loading-bubble">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+        chatContainer.appendChild(div);
+        scrollToBottom();
+        return div;
+    }
+
+    function removeLoadingBubble() {
+        const el = document.getElementById('loading-bubble');
+        if (el) el.remove();
+    }
+
+    function createToolIndicator(toolName) {
+        const div = document.createElement('div');
+        div.className = 'tool-indicator';
+        div.innerHTML = `
+            <div class="tool-dots"><span></span><span></span><span></span></div>
+            正在查询：${escapeHtml(toolName)}
+        `;
+        chatContainer.appendChild(div);
+        scrollToBottom();
+        return div;
+    }
+
+    function renderProductCards(products) {
+        const layouts = ['layout-grid', 'layout-list', 'layout-showcase', 'layout-overlay'];
+        const layout = layouts[Math.floor(Math.random() * layouts.length)];
+
+        const section = document.createElement('div');
+        section.className = `product-section ${layout}`;
+        section.innerHTML = `
+            <div class="product-section-header">
+                <div class="icon">✨</div>
+                <span class="title">为你推荐</span>
+                <span class="count">${products.length} 件商品</span>
+            </div>
+        `;
+
+        if (layout === 'layout-showcase' && products.length > 1) {
+            // 第一个大图 featured，其余在下方一行
+            const featured = products[0];
+            const featuredEl = document.createElement('div');
+            featuredEl.className = 'product-card-featured';
+            featuredEl.innerHTML = `
+                <img src="${escapeHtml(featured.image)}" alt="${escapeHtml(featured.name)}"
+                     referrerpolicy="no-referrer" onerror="this.style.display='none'">
+                <span class="product-card-badge">推荐</span>
+                <div class="product-card-featured-overlay">
+                    <div class="name">${escapeHtml(featured.name)}</div>
+                    <div class="desc">${escapeHtml(featured.description)}</div>
+                </div>
+            `;
+            section.appendChild(featuredEl);
+
+            const sub = document.createElement('div');
+            sub.className = 'product-cards product-cards-sub';
+            products.slice(1).forEach(p => sub.appendChild(makeCard(p, layout)));
+            section.appendChild(sub);
+        } else {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'product-cards';
+            products.forEach(p => wrapper.appendChild(makeCard(p, layout)));
+            section.appendChild(wrapper);
+        }
+
+        chatContainer.appendChild(section);
+        scrollToBottom();
+    }
+
+    function renderQuestion(questionData) {
+        const section = document.createElement('div');
+        section.className = 'question-section';
+
+        const header = questionData.header || '请选择';
+        const multiSelect = questionData.multiSelect || false;
+        const options = questionData.options || [];
+        const inputType = multiSelect ? 'checkbox' : 'radio';
+        const inputName = 'question-' + Date.now();
+
+        section.innerHTML = `
+            <div class="question-header">
+                <div class="icon">❓</div>
+                <span class="title">${escapeHtml(header)}</span>
+            </div>
+            <div class="question-options">
+                ${options.map((opt, idx) => `
+                    <label class="question-option" data-index="${idx}">
+                        <input type="${inputType}" name="${inputName}" value="${escapeHtml(opt)}">
+                        <span class="question-option-label">${escapeHtml(opt)}</span>
+                    </label>
+                `).join('')}
+            </div>
+            <button class="question-submit">确认</button>
+        `;
+
+        chatContainer.appendChild(section);
+        scrollToBottom();
+
+        // 添加选项点击事件
+        const optionElements = section.querySelectorAll('.question-option');
+        optionElements.forEach(opt => {
+            opt.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const input = this.querySelector('input');
+                    input.checked = !input.checked;
+                }
+
+                if (multiSelect) {
+                    this.classList.toggle('selected', this.querySelector('input').checked);
+                } else {
+                    optionElements.forEach(o => o.classList.remove('selected'));
+                    if (this.querySelector('input').checked) {
+                        this.classList.add('selected');
+                    }
+                }
+            });
+        });
+
+        // 添加提交按钮事件
+        const submitBtn = section.querySelector('.question-submit');
+        submitBtn.addEventListener('click', async () => {
+            const selectedInputs = section.querySelectorAll('input:checked');
+            const selectedValues = Array.from(selectedInputs).map(input => input.value);
+
+            if (selectedValues.length === 0) {
+                alert('请至少选择一个选项');
+                return;
+            }
+
+            // 禁用问题区域和提交按钮
+            section.style.opacity = '0.6';
+            section.style.pointerEvents = 'none';
+            submitBtn.disabled = true;
+
+            // 将选中的答案作为用户消息发送
+            const answerText = selectedValues.join('、');
+            appendUserMessage(answerText);
+
+            // 发送到后端继续对话
+            await sendMessageToBackend(answerText);
+        });
+    }
+
+    function makeCard(p, layout) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        const arrowHtml = layout === 'layout-list'
+            ? `<div class="product-card-arrow">›</div>` : '';
+        card.innerHTML = `
+            <div class="product-card-img-wrap">
+                <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}"
+                     referrerpolicy="no-referrer" onerror="this.parentElement.style.background='#f1f5f9';this.style.display='none'">
+                <span class="product-card-badge">推荐</span>
+            </div>
+            <div class="product-card-info">
+                <div class="product-card-name">${escapeHtml(p.name)}</div>
+                <div class="product-card-desc">${escapeHtml(p.description)}</div>
+            </div>
+            ${arrowHtml}
+        `;
+        return card;
+    }
+
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function sendMessageToBackend(text) {
+        const loadingEl = createLoadingBubble();
+
+        // 添加用户消息到历史
+        conversationHistory.push({
+            type: 'text',
+            content: text
+        });
+
+        const body = {
+            message: [
+                {
+                    type: 'text',
+                    content: text
+                }
+            ]
+        };
+
+        let currentBubble = null;
+        let currentText = '';
+        let toolIndicator = null;
+        let currentToolCall = null;
+
+        try {
+            const userIdInput = document.getElementById('user-id-input').value;
+            const userId = userIdInput ? parseInt(userIdInput, 10) : 1;
+            const response = await fetch('http://127.0.0.1:8000/chat/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'user-id': String(userId)
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    if (!line.startsWith('data:')) continue;
+                    const jsonStr = line.slice(5).trim();
+                    if (!jsonStr) continue;
+                    try { handleEvent(JSON.parse(jsonStr)); } catch {}
+                }
+            }
+
+            if (buffer.startsWith('data:')) {
+                const jsonStr = buffer.slice(5).trim();
+                if (jsonStr) try { handleEvent(JSON.parse(jsonStr)); } catch {}
+            }
+
+        } catch (err) {
+            removeLoadingBubble();
+            const bubble = createAssistantBubble();
+            bubble.classList.remove('typing-cursor');
+            bubble.style.color = '#ef4444';
+            bubble.textContent = `请求失败：${err.message}`;
+        }
+
+        function handleEvent(event) {
+            switch (event.type) {
+                case 'RUN_STARTED':
+                    removeLoadingBubble();
+                    break;
+
+                case 'TOOL_CALL_START':
+                    // 存储当前工具调用信息
+                    currentToolCall = {
+                        toolCallId: event.toolCallId,
+                        toolCallName: event.toolCallName
+                    };
+                    toolIndicator = createToolIndicator(event.toolCallName || '工具');
+                    break;
+
+                case 'TOOL_CALL_END':
+                    if (toolIndicator) { toolIndicator.remove(); toolIndicator = null; }
+                    break;
+
+                case 'TOOL_CALL_RESULT':
+                    if (toolIndicator) { toolIndicator.remove(); toolIndicator = null; }
+
+                    // 根据 toolCallName 决定如何渲染
+                    if (currentToolCall) {
+                        try {
+                            const content = JSON.parse(event.content);
+
+                            if (currentToolCall.toolCallName === 'recommended_products') {
+                                // 渲染商品卡片
+                                if (Array.isArray(content) && content.length && content[0].image) {
+                                    renderProductCards(content);
+                                }
+                            } else if (currentToolCall.toolCallName === 'ask_user_question') {
+                                // 渲染问题选项
+                                if (content.options && Array.isArray(content.options)) {
+                                    renderQuestion(content);
+                                }
+                            }
+                        } catch (e) {
+                            console.error('解析工具调用结果失败:', e);
+                        }
+
+                        // 清空当前工具调用信息
+                        currentToolCall = null;
+                    }
+                    break;
+
+                case 'TEXT_MESSAGE_START':
+                    currentText = '';
+                    currentBubble = createAssistantBubble();
+                    break;
+
+                case 'TEXT_MESSAGE_CONTENT':
+                    if (currentBubble && event.delta) {
+                        currentText += event.delta;
+                        currentBubble.innerHTML = parseMarkdown(currentText);
+                        scrollToBottom();
+                    }
+                    break;
+
+                case 'TEXT_MESSAGE_END':
+                    if (currentBubble) {
+                        currentBubble.classList.remove('typing-cursor');
+                        currentBubble.innerHTML = parseMarkdown(currentText);
+                        // 将 AI 回复存入历史
+                        if (currentText) {
+                            conversationHistory.push({
+                                type: 'text',
+                                content: currentText
+                            });
+                        }
+                        currentBubble = null;
+                        currentText = '';
+                        scrollToBottom();
+                    }
+                    break;
+            }
+        }
+    }
+
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        userInput.value = '';
+        userInput.style.height = 'auto';
+        sendBtn.disabled = true;
+        sendBtn.classList.add('loading');
+
+        appendUserMessage(text);
+
+        try {
+            await sendMessageToBackend(text);
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.classList.remove('loading');
+        }
+    }
+</script>
+</body>
+</html>
