@@ -9,7 +9,7 @@ class TextContent(BaseModel):
 
 
 class ImageContent(BaseModel):
-    type: Literal['image'] = Field(default='image', description='图片类型')
+    type: Literal['image'] = Field('image', description='图片类型')
     url: HttpUrl | None = Field(None, description='url图片内容')
     base64: str | None = Field(None, description='base64编码')
 
