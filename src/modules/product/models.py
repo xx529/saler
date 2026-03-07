@@ -1,10 +1,10 @@
 from sqlalchemy import String, Text
 from sqlmodel import Field
 
-from src.store.base import BaseSqlModel, SaColKwargs, SnowFlakeID
+from src.store.db.base import BaseSqlModel, SaColKwargs, StringUUID
 
 
-class Product(SnowFlakeID, BaseSqlModel, table=True):
+class Product(StringUUID, BaseSqlModel, table=True):
     __tablename__ = 'product'
     __table_args__ = {'comment': '商品记录表'}
 

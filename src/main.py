@@ -1,3 +1,4 @@
+import json
 import tomllib
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -8,7 +9,7 @@ from fastapi import FastAPI
 from starlette.responses import HTMLResponse
 
 from src.api import routers
-from src.store.connect import create_all, show_ddl
+from src.store.db.connect import create_all, show_ddl
 from src.utils.logger import get_logger
 
 logger = get_logger('main')
@@ -49,6 +50,11 @@ async def index():
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+
+openapi_schema = app.openapi()
+with open(Path(__file__).parent.parent / 'openapi.json', 'w') as f:
+    json.dump(openapi_schema, f, indent=4, ensure_ascii=False)
 
 
 def run():

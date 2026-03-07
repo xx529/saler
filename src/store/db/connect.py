@@ -26,7 +26,7 @@ engine = create_engine(
     pool_size=config.db["pool_size"],
 )
 
-event.listen(engine, "connect", _load_sqlite_vss)
+# event.listen(engine, "connect", _load_sqlite_vss)
 
 async_engine = create_async_engine(
     url=config.db['async_url'],
@@ -36,7 +36,7 @@ async_engine = create_async_engine(
     pool_size=config.db["pool_size"],
 )
 
-event.listen(async_engine.sync_engine, "connect", _load_sqlite_vss)
+# event.listen(async_engine.sync_engine, "connect", _load_sqlite_vss)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=async_engine,
@@ -47,15 +47,15 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 # 检测 sqlite-vss 是否加载成功
-try:
-    with engine.connect() as conn:
-        result = conn.execute(
-            text("SELECT vss_version()")
-        ).fetchone()
-        logger.info(f'sqlite-vss loaded successfully, version: {result[0]}')
-except Exception as e:
-    logger.error(f'Failed to load sqlite-vss: {e}')
-    raise
+# try:
+#     with engine.connect() as conn:
+#         result = conn.execute(
+#             text("SELECT vss_version()")
+#         ).fetchone()
+#         logger.info(f'sqlite-vss loaded successfully, version: {result[0]}')
+# except Exception as e:
+#     logger.error(f'Failed to load sqlite-vss: {e}')
+#     raise
 
 
 def show_ddl():

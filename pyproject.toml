@@ -10,6 +10,7 @@ dependencies = [
     "aiosqlite>=0.22.1",
     "dashscope>=1.25.13",
     "fastapi>=0.135.1",
+    "greenlet>=3.3.2",
     "loguru>=0.7.3",
     "pandas>=3.0.1",
     "pydantic>=2.12.5",

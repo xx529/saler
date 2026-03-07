@@ -33,6 +33,184 @@
             overflow: hidden;
         }
 
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .chat-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ─── Conversation Sidebar ─── */
+        .conv-sidebar {
+            width: 260px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .conv-sidebar-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .conv-sidebar-header .title {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .conv-new-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .conv-new-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+        }
+
+        .conv-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .conv-list::-webkit-scrollbar { width: 4px; }
+        .conv-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .conv-empty {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .conv-item {
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 4px;
+        }
+
+        .conv-item:hover {
+            background: var(--bg);
+        }
+
+        .conv-item.active {
+            background: var(--primary-light);
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+
+        .conv-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conv-item-time {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        /* ─── New Conv Modal ─── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.hidden { display: none; }
+
+        .modal-box {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            width: 340px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-box h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+
+        .modal-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .modal-actions button {
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .modal-cancel {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border) !important;
+        }
+
+        .modal-confirm {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+        }
+
         /* ─── Header ─── */
         header {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
@@ -778,6 +956,18 @@
     <div class="header-badge">● 在线</div>
 </header>
 
+<div class="main-wrapper">
+<div class="conv-sidebar" id="conv-sidebar">
+    <div class="conv-sidebar-header">
+        <span class="title">对话列表</span>
+        <button class="conv-new-btn" onclick="showNewConvModal()">+ 新建</button>
+    </div>
+    <div class="conv-list" id="conv-list">
+        <div class="conv-empty">输入 User ID 后自动加载对话</div>
+    </div>
+</div>
+
+<div class="chat-wrapper">
 <div id="chat-container">
     <div class="welcome">
         <div class="welcome-icon">✨</div>
@@ -808,6 +998,20 @@
         </span>
     </button>
 </div>
+</div><!-- /chat-wrapper -->
+</div><!-- /main-wrapper -->
+
+<!-- New Conversation Modal -->
+<div class="modal-overlay hidden" id="new-conv-modal">
+    <div class="modal-box">
+        <h3>新建对话</h3>
+        <input type="text" id="new-conv-name" placeholder="请输入对话名称" maxlength="64">
+        <div class="modal-actions">
+            <button class="modal-cancel" onclick="hideNewConvModal()">取消</button>
+            <button class="modal-confirm" onclick="createConv()">确认</button>
+        </div>
+    </div>
+</div>
 
 <script>
     // 检查 marked 是否加载成功，提供降级方案
@@ -825,6 +1029,119 @@
 
     // 存储对话历史
     let conversationHistory = [];
+    // 当前选中的对话ID
+    let currentConvId = null;
+
+    // ─── Conversation Management ───
+    function fetchConvList() {
+        const userId = document.getElementById('user-id-input').value;
+        if (!userId) { alert('请先输入 User ID'); return; }
+
+        fetch('http://127.0.0.1:8000/conv/list', {
+            headers: { 'user-id': String(userId), 'language': 'zh' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('conv-list');
+            if (data.errcode !== 0 || !data.data || data.data.length === 0) {
+                list.innerHTML = '<div class="conv-empty">暂无对话，点击「+ 新建」创建</div>';
+                return;
+            }
+            list.innerHTML = '';
+            data.data.forEach(conv => {
+                const item = document.createElement('div');
+                item.className = 'conv-item' + (conv.id === currentConvId ? ' active' : '');
+                const time = conv.create_at ? new Date(conv.create_at * 1000).toLocaleString('zh-CN') : '';
+                item.innerHTML = `
+                    <div class="conv-item-name">${escapeHtml(conv.name)}</div>
+                    <div class="conv-item-time">${escapeHtml(time)}</div>
+                `;
+                item.addEventListener('click', () => selectConv(conv.id, conv.name));
+                list.appendChild(item);
+            });
+        })
+        .catch(err => alert('获取对话列表失败: ' + err.message));
+    }
+
+    function selectConv(convId, convName) {
+        currentConvId = convId;
+        // 更新侧栏选中状态
+        document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        // 清空聊天区域，重新开始
+        conversationHistory = [];
+        chatContainer.innerHTML = `
+            <div class="welcome">
+                <div class="welcome-icon">💬</div>
+                <h2>${escapeHtml(convName)}</h2>
+                <p>对话已选中，开始聊天吧</p>
+            </div>
+        `;
+    }
+
+    function showNewConvModal() {
+        document.getElementById('new-conv-modal').classList.remove('hidden');
+        document.getElementById('new-conv-name').value = '';
+        document.getElementById('new-conv-name').focus();
+    }
+
+    function hideNewConvModal() {
+        document.getElementById('new-conv-modal').classList.add('hidden');
+    }
+
+    function createConv() {
+        const name = document.getElementById('new-conv-name').value.trim();
+        if (!name) { alert('请输入对话名称'); return; }
+        const userId = document.getElementById('user-id-input').value;
+        if (!userId) { alert('请先输入 User ID'); return; }
+
+        fetch('http://127.0.0.1:8000/conv/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'user-id': String(userId),
+                'language': 'zh'
+            },
+            body: JSON.stringify({ name })
+        })
+        .then(r => r.json())
+        .then(data => {
+            hideNewConvModal();
+            if (data.errcode !== 0) {
+                alert('创建失败: ' + (data.errmsg || '未知错误'));
+                return;
+            }
+            // 选中新创建的对话
+            if (data.data && data.data.id) {
+                currentConvId = data.data.id;
+            }
+            fetchConvList();
+        })
+        .catch(err => alert('创建对话失败: ' + err.message));
+    }
+
+    // Modal 点击外部关闭
+    document.getElementById('new-conv-modal').addEventListener('click', function(e) {
+        if (e.target === this) hideNewConvModal();
+    });
+
+    // Modal 回车确认
+    document.getElementById('new-conv-name').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') createConv();
+    });
+
+    // 输入 User ID 后自动加载对话列表
+    let fetchTimer = null;
+    document.getElementById('user-id-input').addEventListener('input', function() {
+        clearTimeout(fetchTimer);
+        const val = this.value.trim();
+        if (!val) {
+            document.getElementById('conv-list').innerHTML = '<div class="conv-empty">输入 User ID 后自动加载对话</div>';
+            currentConvId = null;
+            return;
+        }
+        fetchTimer = setTimeout(fetchConvList, 500);
+    });
 
     userInput.addEventListener('input', () => {
         userInput.style.height = 'auto';
@@ -1062,6 +1379,7 @@
         });
 
         const body = {
+            conv_id: currentConvId || 'abc',
             message: [
                 {
                     type: 'text',

@@ -1,7 +1,11 @@
 import uuid
-from typing import List, Literal, Self
+from typing import Any, List, Literal, Optional, Self
 
+from ag_ui.core import Context as AguiContext
+from ag_ui.core import Message as AguiMessage
+from ag_ui.core import Tool as AguiTool
 from ag_ui.core import UserMessage as AgUiUserMessage
+from ag_ui.core import RunAgentInput as AgUiRunAgentInput
 from pydantic import BaseModel, Field, HttpUrl, model_validator
 
 
@@ -23,7 +27,7 @@ class ImageContent(BaseModel):
 
 
 class ChatQuery(BaseModel):
-    # conv_id: str = Field(description='对话ID')
+    conv_id: str = Field(description='对话ID')
     message: List[TextContent] = Field(description='问题内容')
 
     def to_agui_message(self) -> List[AgUiUserMessage]:
@@ -32,3 +36,14 @@ class ChatQuery(BaseModel):
             id=uuid.uuid4().hex,
         )
         return [user_msg]
+
+
+class RunAgentInput(AgUiRunAgentInput):
+    thread_id: str
+    run_id: str
+    parent_run_id: Optional[str] = None
+    state: Any = None
+    messages: List[AguiMessage]
+    tools: List[AguiTool] = Field(default_factory=list)
+    context: List[AguiContext] = Field(default_factory=list)
+    forwarded_props: Any = None
